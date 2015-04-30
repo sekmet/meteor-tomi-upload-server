@@ -401,14 +401,15 @@ UploadHandler.prototype.post = function () {
     }
 
     // possibly rename file if needed;
-    var newFileName = options.getFileName(fileInfo, this.formFields);
-
-    // set the file name
-    fileInfo.name = newFileName;
-    fileInfo.path = folder + "/" + newFileName;
-
-    fs.renameSync(file.path, currentFolder + "/" + newFileName);
-
+    var formFields = this.formFields;
+    Fiber(function () {
+      var newFileName = options.getFileName(fileInfo, formFields);
+      // set the file name
+      fileInfo.name = newFileName;
+      fileInfo.path = folder + "/" + newFileName;
+      fs.renameSync(file.path, currentFolder + "/" + newFileName);
+    }).run();
+    
     if (options.imageTypes.test(fileInfo.name)) {
       Object.keys(options.imageVersions).forEach(function (version) {
         counter += 1;
@@ -429,7 +430,7 @@ UploadHandler.prototype.post = function () {
     }
 
     // call the feedback within its own fiber
-    var formFields = this.formFields;
+    // var formFields = this.formFields;
     Fiber(function () {
       options.finished(fileInfo, formFields);
     }).run();
